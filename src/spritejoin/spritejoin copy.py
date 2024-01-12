@@ -8,57 +8,17 @@ import math
 from PIL import Image
 
 
-class Vector():
-    def __init__(self, values: tuple[int | float, int | float] = (0, 0),
-                 x: int | float | None = None, y: int | float | None = None) -> None:
-        assert not((x is None) != (y is None)),\
-            'Enter values as a tuple or as both named x and y arguments'
-        if (x is not None) and (y is not None):
-            self.x = x
-            self.y = y
-        else:
-            self.x = values[0]
-            self.y = values[1]
-        self._index = 0
+class Vector(tuple):
+    def __init__(self, values: tuple[int | float, int | float] = (0, 0)) -> None:
+        super().__init__()
+        self.x = values[0]
+        self.y = values[1]
+        self.values = (self.x, self.y)
 
     def add_vector(self, vector: Vector):
+        vector = Vector(vector)
         self.x += vector.x
         self.y += vector.y
-
-    def multiply_vector(self, vector: Vector):
-        self.x *= vector.x
-        self.y *= vector.y
-
-    def to_int(self) -> None:
-        self.x = int(self.x)
-        self.y = int(self.y)
-    
-    def __mul__(self, value: int | float) -> Vector:
-        return Vector((self.x * value, self.y * value))
-    
-    def __add__(self, value: int | float) -> Vector:
-        return Vector((self.x + value, self.y + value))
-    
-    def __sub__(self, value: int | float) -> Vector:
-        return Vector((self.x - value, self.y - value))
-    
-    def __truediv__(self, value: int | float) -> Vector:
-        return Vector((self.x / value, self.y / value))
-    
-    def __str__(self) -> str:
-        return f'({self.x}, {self.y})'
-    
-    def __iter__(self):
-        self._values = (self.x, self.y)
-        return self
-
-    def __next__(self):
-        try:
-            result = self._values[self._index]
-        except IndexError:
-            raise StopIteration
-        self._index += 1
-        return result
 
 
 def join_images(
@@ -73,19 +33,18 @@ def join_images(
         with os.scandir(directory) as directory_list:
             image_paths |= set(entry.path for entry in directory_list if entry.is_file())
     image_paths -= exclusions
-    total_size = Vector()
+
+    total_size = (0, 0)
     image_sizes = {}
     for image_path in image_paths:
         with Image.open(image_path) as image:
-            image_size = Vector(image.size)
-            image_sizes.update({image_path: image_size})
-            total_size.add_vector(image_size)
-
+            image_sizes.update({image_path: image.size})
+            total_size = (total_size[0] + image.size[0], total_size[1] + image.size[1])
     n_images = len(image_sizes)
     total_area = math.prod(total_size)
     optimal_area = total_area / n_images
     optimal_area_sqrt = math.sqrt(optimal_area)
-    print(total_size - 2)
+    
     print(f'File number: {n_images}')
     print(f'Total x and y: {total_size}')
     print(f'Total area: {total_area}')
